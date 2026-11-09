@@ -795,6 +795,13 @@ def all_messages(message):
         log_activity(uid, message.chat.id, "proof_submitted", f"Task #{task_id}")
         return
 
+        if message.text:
+        command = message.text.strip().lower()
+
+        if command == "/profile" or message.text.strip() == "👤 My Profile":
+            show_profile(message.chat.id, uid)
+            return
+
     if uid != OWNER_ID:
         return
 
