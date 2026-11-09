@@ -121,7 +121,10 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
         """)
-        con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_text',?)", (
+con.execute(
+    "INSERT OR IGNORE INTO settings(key, value) VALUES('welcome_text', ?)",
+    (WELCOME_TEXT,)
+)
             "👋 <b>Welcome to MUZAFFAR TASK REWARD BOT!</b>\n\n"
             "🎯 Complete tasks and earn rewards.\n"
             "🎁 Receive redeem codes, files and exclusive gifts.\n\n"
