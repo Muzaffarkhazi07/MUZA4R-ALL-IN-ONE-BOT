@@ -15,6 +15,8 @@ from telebot.apihelper import ApiTelegramException
 # ============================================================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 OWNER_ID = int(os.getenv("OWNER_ID", "5839586443"))
+def is_owner(user_id):
+    return int(user_id) == OWNER_ID
 OWNER_USERNAME = "@zindadil07"
 SUPPORT_USERNAME = "@HeavenCoreX"
 DB_PATH = os.getenv("DATABASE_PATH", "bot_data/bot.sqlite3")
