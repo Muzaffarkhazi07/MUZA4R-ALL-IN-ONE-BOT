@@ -197,12 +197,6 @@ def main_menu(chat_id):
         types.InlineKeyboardButton("👤 My Profile", callback_data="profile")
     )
     kb.add(
-        types.InlineKeyboardButton("🏆 Leaderboard", callback_data="leaderboard"),
-        types.InlineKeyboardButton("📖 Help", callback_data="help")
-    )
-    kb.add(types.InlineKeyboardButton("➕ Add to Your Group", url=f"https://t.me/{bot.get_me().username}?startgroup=true"))
-    return kb
-
 
 def owner_menu():
     kb = types.InlineKeyboardMarkup(row_width=2)
@@ -229,13 +223,10 @@ def safe_send_message(chat_id, text, **kwargs):
         return None
 
 
-# ============================================================
 # USER COMMANDS / GROUP TRACKING
-# ============================================================
 @bot.message_handler(commands=["start"])
 def start(message):
     user = message.from_user
-    # A user is DM-reachable only after opening the bot in private chat.
     user._dm_started = (message.chat.type == "private")
     upsert_user(user)
 
@@ -260,7 +251,8 @@ def start(message):
             message.chat.title or ""
         )
         return
-         log_activity(user.id, message.chat.id, "start", "Private /start")
+
+    log_activity(user.id, message.chat.id, "start", "Private /start")
     text = setting("welcome_text")
     media_id = setting("welcome_media_id")
     media_kind = setting("welcome_media_kind")
@@ -269,35 +261,28 @@ def start(message):
     try:
         if media_id and media_kind == "video":
             bot.send_video(
-                message.chat.id,
-                media_id,
-                caption=text,
-                reply_markup=markup
+                message.chat.id, media_id,
+                caption=text, reply_markup=markup
             )
         elif media_id and media_kind == "photo":
             bot.send_photo(
-                message.chat.id,
-                media_id,
-                caption=text,
-                reply_markup=markup
+                message.chat.id, media_id,
+                caption=text, reply_markup=markup
             )
         else:
             bot.send_message(
-                message.chat.id,
-                text,
-                reply_markup=markup
+                message.chat.id, text, reply_markup=markup
             )
     except Exception:
         safe_send_message(
-            message.chat.id,
-            text,
-            reply_markup=markup
+            message.chat.id, text, reply_markup=markup
         )
 
 
 def register_group(chat, added_by=0):
     if chat.type not in ("group", "supergroup"):
         return
+
     try:
         member = bot.get_chat_member(chat.id, bot.get_me().id)
         admin = member.status in ("administrator", "creator")
