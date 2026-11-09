@@ -260,20 +260,39 @@ def start(message):
             message.chat.title or ""
         )
         return
- log_activity(user.id, message.chat.id, "start", "Private /start")
+         log_activity(user.id, message.chat.id, "start", "Private /start")
     text = setting("welcome_text")
     media_id = setting("welcome_media_id")
     media_kind = setting("welcome_media_kind")
     markup = main_menu(message.chat.id)
+
     try:
         if media_id and media_kind == "video":
-            bot.send_video(message.chat.id, media_id, caption=text, reply_markup=markup)
+            bot.send_video(
+                message.chat.id,
+                media_id,
+                caption=text,
+                reply_markup=markup
+            )
         elif media_id and media_kind == "photo":
-            bot.send_photo(message.chat.id, media_id, caption=text, reply_markup=markup)
+            bot.send_photo(
+                message.chat.id,
+                media_id,
+                caption=text,
+                reply_markup=markup
+            )
         else:
-            bot.send_message(message.chat.id, text, reply_markup=markup)
+            bot.send_message(
+                message.chat.id,
+                text,
+                reply_markup=markup
+            )
     except Exception:
-        safe_send_message(message.chat.id, text, reply_markup=markup)
+        safe_send_message(
+            message.chat.id,
+            text,
+            reply_markup=markup
+        )
 
 
 def register_group(chat, added_by=0):
