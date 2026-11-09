@@ -217,17 +217,14 @@ def owner_menu():
         kb.add(b)
 
     return kb
-        types.InlineKeyboardButton("📊 Statistics", callback_data="own:stats"),
-    ]
-    for b in buttons:
-        kb.add(b)
-    return kb
 
 
 def safe_send_message(chat_id, text, **kwargs):
     try:
         return bot.send_message(chat_id, text, **kwargs)
     except Exception as e:
+        log.warning("send_message failed to %s: %s", chat_id, e)
+        return None
         log.warning("send_message failed to %s: %s", chat_id, e)
         return None
 
