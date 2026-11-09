@@ -121,32 +121,31 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
         """)
-con.execute(
-    "INSERT OR IGNORE INTO settings(key, value) VALUES('welcome_text', ?)",
-    (WELCOME_TEXT,)
-)
-WELCOME_TEXT = (
-    "<b>Welcome to MUZAFFAR TASK REWARD BOT!</b>\n\n"
-    "🎯 Complete tasks and earn rewards.\n"
-    "🎁 Receive redeem codes, files and exclusive gifts.\n\n"
-    "👥 You can add this bot to your own Telegram group. "
-    "Please make the bot an administrator for group features.\n\n"
-    "🤖 Want a similar bot? DM @zindadil07\n"
-    "🛠 Support: @HeavenCoreX\n\n"
-    "❤️ Powered by MUZAFFAR"
-)
 
-con.execute(
-    "INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_text', ?)",
-    (WELCOME_TEXT,)
-)
-con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_media_id','')")
-con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_media_kind','')")
+        WELCOME_TEXT = (
+            "<b>Welcome to MUZAFFAR TASK REWARD BOT!</b>\n\n"
+            "🎯 Complete tasks and earn rewards.\n"
+            "🎁 Receive redeem codes, files and exclusive gifts.\n\n"
+            "👥 You can add this bot to your own Telegram group. "
+            "Please make the bot an administrator for group features.\n\n"
+            "🤖 Want a similar bot? DM @zindadil07\n"
+            "🛠 Support: @HeavenCoreX\n\n"
+            "❤️ Powered by MUZAFFAR"
+        )
+
+        con.execute(
+            "INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_text', ?)",
+            (WELCOME_TEXT,)
+        )
+        con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_media_id','')")
+        con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('welcome_media_kind','')")
 
 
 def setting(key):
-      with db() as con:
-        row = con.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+    with db() as con:
+        row = con.execute(
+            "SELECT value FROM settings WHERE key=?", (key,)
+        ).fetchone()
         return row["value"] if row else ""
 
 
