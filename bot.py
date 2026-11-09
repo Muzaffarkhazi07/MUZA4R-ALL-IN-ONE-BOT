@@ -342,37 +342,37 @@ def show_tasks(chat_id):
 
 
 @bot.message_handler(commands=["profile"])
-def profile_cmd(message):
-    upsert_user(message.from_user)
-    show_profile(message.chat.id, message.from_user.id)
-
-
 def show_profile(chat_id, user_id):
     with db() as con:
-        u = con.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
-        done = con.execute("SELECT COUNT(*) n FROM deliveries WHERE user_id=?", (user_id,)).fetchone()["n"]
-        pending = con.execute("SELECT COUNT(*) n FROM submissions WHERE user_id=? AND status='pending'", (user_id,)).fetchone()["n"]
+        u = con.execute(
+            "SELECT * FROM users WHERE user_id=?", (user_id,)
+        ).fetchone()
+
+        done = con.execute(
+            "SELECT COUNT(*) n FROM deliveries WHERE user_id=?",
+            (user_id,)
+        ).fetchone()["n"]
+
+        pending = con.execute(
+            "SELECT COUNT(*) n FROM submissions WHERE user_id=? AND status='pending'",
+            (user_id,)
+        ).fetchone()["n"]
+
     if not u:
         safe_send_message(chat_id, "Please /start me in private first.")
         return
+
     name = (u["first_name"] + " " + u["last_name"]).strip()
-      safe_send_message(
+
+    safe_send_message(
         chat_id,
         f"👤 <b>Your Profile</b>\n"
-        f"Name: {esc(name)}\nUsername: @{esc(u['username']) if u['username'] else 'Not set'}\n"
+        f"Name: {esc(name)}\n"
+        f"Username: @{esc(u['username']) if u['username'] else 'Not set'}\n"
         f"ID: <code>{user_id}</code>\n"
-        f"🎁 Rewards received: {done}\n⏳ Pending submissions: {pending}"
+        f"🎁 Rewards received: {done}\n"
+        f"⏳ Pending submissions: {pending}"
     )
-
-
-@bot.message_handler(commands=["leaderboard"])
-def leaderboard_cmd(message):
-    with db() as con:
-        rows = con.execute("""
-        SELECT u.user_id,u.first_name,u.username,COUNT(d.delivery_id) total
-        FROM users u LEFT JOIN deliveries d ON d.user_id=u.user_id
-        GROUP BY u.user_id ORDER BY total DESC LIMIT 10
-        """).fetchall()
     lines = ["🏆 <b>TOP REWARD EARNERS</b>"]
     for i, r in enumerate(rows, 1):
         label = r["first_name"] or r["username"] or str(r["user_id"])
