@@ -236,22 +236,31 @@ def safe_send_message(chat_id, text, **kwargs):
 def start(message):
     user = message.from_user
     # A user is DM-reachable only after opening the bot in private chat.
-      user._dm_started = (message.chat.type == "private")
+    user._dm_started = (message.chat.type == "private")
     upsert_user(user)
+
     if is_banned(user.id):
         return
+
     if message.chat.type in ("group", "supergroup"):
         register_group(message.chat, user.id)
         with db() as con:
-            con.execute("UPDATE users SET dm_started=0 WHERE user_id=?", (user.id,))
+            con.execute(
+                "UPDATE users SET dm_started=0 WHERE user_id=?",
+                (user.id,)
+            )
+
         safe_send_message(
             message.chat.id,
             "👋 <b>MUZAFFAR TASK REWARD BOT is active!</b>\n"
             "Use /tasks to view available tasks. For private rewards, each member must start me in DM."
         )
-        log_activity(user.id, message.chat.id, "group_start", message.chat.title or "")
+        log_activity(
+            user.id, message.chat.id, "group_start",
+            message.chat.title or ""
+        )
         return
-
+ log_activity(user.id, message.chat.id, "start", "Private /start")
     log_activity(user.id, message.chat.id, "start", "Private /start")
     text = setting("welcome_text")
     media_id = setting("welcome_media_id")
