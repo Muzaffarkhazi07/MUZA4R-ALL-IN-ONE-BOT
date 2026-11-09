@@ -261,8 +261,7 @@ def start(message):
         )
         return
  log_activity(user.id, message.chat.id, "start", "Private /start")
-    log_activity(user.id, message.chat.id, "start", "Private /start")
-    text = setting("welcome_text")
+text = setting("welcome_text")
     media_id = setting("welcome_media_id")
     media_kind = setting("welcome_media_kind")
     markup = main_menu(message.chat.id)
