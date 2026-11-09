@@ -742,25 +742,10 @@ def all_messages(message):
     upsert_user(message.from_user)
     uid = message.from_user.id
 
-    # Record active groups when people use the bot commands or interact in groups.
-    if message.chat.type in ("group", "supergroup"):
-        if message.text and message.text.startswith("/"):
-            register_group(message.chat, uid)
-        return
-
-    if is_banned(uid):
-        return
-
-    state = user_states.get(uid)
-    if not state:
-        return
-
-    mode = state.get("mode")
-    content_type = message.content_type
-
     if mode == "submit_proof":
-              task_id = state["task_id"]
+        task_id = state["task_id"]
         proof = message.text or f"[{content_type} message_id={message.message_id}]"
+
         with db() as con:
             try:
                 con.execute(
@@ -772,6 +757,7 @@ def all_messages(message):
                     "UPDATE submissions SET proof=?,status='pending',submitted_at=CURRENT_TIMESTAMP WHERE task_id=? AND user_id=?",
                     (proof[:3000], task_id, uid)
                 )
+
         user_states.pop(uid, None)
         safe_send_message(message.chat.id, "✅ Proof submitted! Owner review ke baad reward DM mein milega.")
         safe_send_message(OWNER_ID, f"🧾 <b>New proof submitted</b>\nTask: #{task_id}\nUser: {esc(message.from_user.first_name)} (@{esc(message.from_user.username or 'no username')})\nID: <code>{uid}</code>\nProof: {esc(proof[:1500])}\nUse /admin → Pending Proofs to review.")
