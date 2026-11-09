@@ -747,10 +747,16 @@ def perform_broadcast(message):
 def all_messages(message):
     if not message.from_user:
         return
+
     if message.chat.type == "private":
         message.from_user._dm_started = True
+
     upsert_user(message.from_user)
     uid = message.from_user.id
+
+    state = user_states.get(uid, {})
+    mode = state.get("mode")
+    content_type = message.content_type
 
     if mode == "submit_proof":
         task_id = state["task_id"]
@@ -769,8 +775,23 @@ def all_messages(message):
                 )
 
         user_states.pop(uid, None)
-        safe_send_message(message.chat.id, "✅ Proof submitted! Owner review ke baad reward DM mein milega.")
-        safe_send_message(OWNER_ID, f"🧾 <b>New proof submitted</b>\nTask: #{task_id}\nUser: {esc(message.from_user.first_name)} (@{esc(message.from_user.username or 'no username')})\nID: <code>{uid}</code>\nProof: {esc(proof[:1500])}\nUse /admin → Pending Proofs to review.")
+
+        safe_send_message(
+            message.chat.id,
+            "✅ Proof submitted! Owner review ke baad reward DM mein milega."
+        )
+
+        safe_send_message(
+            OWNER_ID,
+            f"🧾 <b>New proof submitted</b>\n"
+            f"Task: #{task_id}\n"
+            f"User: {esc(message.from_user.first_name)} "
+            f"(@{esc(message.from_user.username or 'no username')})\n"
+            f"ID: <code>{uid}</code>\n"
+            f"Proof: {esc(proof[:1500])}\n"
+            f"Use /admin → Pending Proofs to review."
+        )
+
         log_activity(uid, message.chat.id, "proof_submitted", f"Task #{task_id}")
         return
 
@@ -781,24 +802,42 @@ def all_messages(message):
         if content_type != "text":
             safe_send_message(message.chat.id, "Please send task title as text.")
             return
+
         state["title"] = message.text[:200]
         state["mode"] = "create_description"
         safe_send_message(message.chat.id, "Task description bhejo:")
+
     elif mode == "create_description":
         state["description"] = (message.text or "")[:1500]
         state["mode"] = "create_instructions"
         safe_send_message(message.chat.id, "Task instructions bhejo:")
+
     elif mode == "create_instructions":
         state["instructions"] = (message.text or "")[:1500]
         state["mode"] = "create_reward_type"
+
         kb = types.InlineKeyboardMarkup(row_width=2)
-        for label, value in [("🎟 Redeem Code / Text", "text"), ("📁 File", "file")]:
-            kb.add(types.InlineKeyboardButton(label, callback_data=f"wizard:reward:{value}"))
-        safe_send_message(message.chat.id, "Reward type select karo:", reply_markup=kb)
+
+        for label, value in [
+            ("🎟 Redeem Code / Text", "text"),
+            ("📁 File", "file")
+        ]:
+            kb.add(types.InlineKeyboardButton(
+                label,
+                callback_data=f"wizard:reward:{value}"
+            ))
+
+        safe_send_message(
+            message.chat.id,
+            "Reward type select karo:",
+            reply_markup=kb
+        )
+
     elif mode == "create_reward":
         if state["reward_type"] == "file":
             file_id = None
             kind = None
+
             if content_type == "document":
                 file_id, kind = message.document.file_id, "document"
             elif content_type == "photo":
@@ -809,72 +848,126 @@ def all_messages(message):
                 file_id, kind = message.audio.file_id, "audio"
             elif content_type == "voice":
                 file_id, kind = message.voice.file_id, "voice"
+
             if not file_id:
-                safe_send_message(message.chat.id, "Reward file/photo/video/audio bhejo.")
+                safe_send_message(
+                    message.chat.id,
+                    "Reward file/photo/video/audio bhejo."
+                )
                 return
+
             state["reward_file_id"] = file_id
             state["reward_file_kind"] = kind
             state["reward_text"] = ""
+
         else:
             if content_type != "text":
-                safe_send_message(message.chat.id, "Redeem code ya reward text bhejo.")
+                safe_send_message(
+                    message.chat.id,
+                    "Redeem code ya reward text bhejo."
+                )
                 return
+
             state["reward_text"] = message.text[:3000]
+
         state["mode"] = "create_slots"
-        safe_send_message(message.chat.id, "Maximum users/slots number bhejo. Unlimited ke liye 0 bhejo:")
+        safe_send_message(
+            message.chat.id,
+            "Maximum users/slots number bhejo. Unlimited ke liye 0 bhejo:"
+        )
+
     elif mode == "create_slots":
         try:
             slots = int(message.text.strip())
             if slots < 0:
                 raise ValueError
         except Exception:
-            safe_send_message(message.chat.id, "Valid number bhejo, e.g. 100 ya 0.")
+            safe_send_message(
+                message.chat.id,
+                "Valid number bhejo, e.g. 100 ya 0."
+            )
             return
+
         state["max_users"] = slots
         finish_task_creation(message.chat.id, state)
+
     elif mode == "broadcast":
         user_states.pop(uid, None)
-        safe_send_message(message.chat.id, "⏳ Broadcast started. Result aapko yahin milega.")
+        safe_send_message(
+            message.chat.id,
+            "⏳ Broadcast started. Result aapko yahin milega."
+        )
         perform_broadcast(message)
+
     elif mode == "welcome_text":
         set_setting("welcome_text", message.text or "")
         user_states.pop(uid, None)
-        safe_send_message(message.chat.id, "✅ Welcome text updated.")
+        safe_send_message(
+            message.chat.id,
+            "✅ Welcome text updated."
+        )
+
     elif mode in ("welcome_video", "welcome_photo"):
         if mode == "welcome_video" and content_type == "video":
             set_setting("welcome_media_id", message.video.file_id)
             set_setting("welcome_media_kind", "video")
+
         elif mode == "welcome_photo" and content_type == "photo":
             set_setting("welcome_media_id", message.photo[-1].file_id)
             set_setting("welcome_media_kind", "photo")
+
         else:
-            safe_send_message(message.chat.id, "Selected media type bhejo.")
+            safe_send_message(
+                message.chat.id,
+                "Selected media type bhejo."
+            )
             return
+
         user_states.pop(uid, None)
-        safe_send_message(message.chat.id, "✅ Welcome media saved.")
+        safe_send_message(
+            message.chat.id,
+            "✅ Welcome media saved."
+        )
 
 
 # Handle reward type selection wizard
 @bot.callback_query_handler(func=lambda c: c.data.startswith("wizard:"))
 def wizard_callbacks(call):
     if not is_owner(call.from_user.id):
-        bot.answer_callback_query(call.id, "Not authorized.", show_alert=True)
+        bot.answer_callback_query(
+            call.id,
+            "Not authorized.",
+            show_alert=True
+        )
         return
+
     parts = call.data.split(":")
+
     if parts[1] == "reward":
         state = user_states.get(OWNER_ID)
+
         if not state:
-            bot.answer_callback_query(call.id, "Wizard expired.", show_alert=True)
+            bot.answer_callback_query(
+                call.id,
+                "Wizard expired.",
+                show_alert=True
+            )
             return
+
         state["reward_type"] = parts[2]
         state["mode"] = "create_reward"
+
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, "Ab reward code/text ya reward file bhejo:")
+        bot.send_message(
+            call.message.chat.id,
+            "Ab reward code/text ya reward file bhejo:"
+        )
 
 
 # ============================================================
 # OWNER GROUP / BROADCAST / USER COMMANDS
 # ============================================================
+
 @bot.message_handler(commands=["groups"])
 def groups_cmd(message):
     if not is_owner(message.from_user.id):
@@ -893,22 +986,42 @@ def users_cmd(message):
 def broadcast_cmd(message):
     if not is_owner(message.from_user.id):
         return
+
     user_states[OWNER_ID] = {"mode": "broadcast"}
-    safe_send_message(message.chat.id, "Broadcast message/media bhejo. Cancel: /cancel")
+    safe_send_message(
+        message.chat.id,
+        "Broadcast message/media bhejo. Cancel: /cancel"
+    )
 
 
 # ============================================================
 # STARTUP
 # ============================================================
+
 def main():
     init_db()
     me = bot.get_me()
-    log.info("Bot started: @%s | owner=%s | db=%s", me.username, OWNER_ID, DB_PATH)
+
+    log.info(
+        "Bot started: @%s | owner=%s | db=%s",
+        me.username,
+        OWNER_ID,
+        DB_PATH
+    )
+
     try:
-        bot.send_message(OWNER_ID, f"✅ <b>MUZAFFAR TASK REWARD BOT is online</b>\nBot: @{me.username}")
+        bot.send_message(
+            OWNER_ID,
+            f"✅ <b>MUZAFFAR TASK REWARD BOT is online</b>\nBot: @{me.username}"
+        )
     except Exception:
         pass
-    bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=30)
+
+    bot.infinity_polling(
+        skip_pending=True,
+        timeout=30,
+        long_polling_timeout=30
+    )
 
 
 if __name__ == "__main__":
