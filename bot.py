@@ -795,16 +795,15 @@ def all_messages(message):
         log_activity(uid, message.chat.id, "proof_submitted", f"Task #{task_id}")
         return
 
-        if message.text:
+    if message.text:
         command = message.text.strip().lower()
 
-        if command == "/profile" or message.text.strip() == "👤 My Profile":
+        if command == "/profile" or command.startswith("/profile@") or command == "👤 my profile":
             show_profile(message.chat.id, uid)
             return
 
     if uid != OWNER_ID:
         return
-
     if mode == "create_title":
         if content_type != "text":
             safe_send_message(message.chat.id, "Please send task title as text.")
