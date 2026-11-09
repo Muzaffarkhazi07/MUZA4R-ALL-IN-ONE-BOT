@@ -177,26 +177,28 @@ def upsert_user(user):
 def is_banned(user_id):
     with db() as con:
         row = con.execute("SELECT is_banned FROM users WHERE user_id=?", (user_id,)).fetchone()
-        return bool(row and row["is_banned"])
-
-
-def is_owner(user_id):
-    return int(user_id) == OWNER_ID
-
-
-def esc(value):
-    # Telegram HTML parse mode escaping
-    import html
-    return html.escape(str(value or ""))
-
-
 def main_menu(chat_id):
     kb = types.InlineKeyboardMarkup(row_width=2)
+
     kb.add(
         types.InlineKeyboardButton("🎯 Available Tasks", callback_data="tasks"),
         types.InlineKeyboardButton("👤 My Profile", callback_data="profile")
     )
+
     kb.add(
+        types.InlineKeyboardButton("🏆 Leaderboard", callback_data="leaderboard"),
+        types.InlineKeyboardButton("📖 Help", callback_data="help")
+    )
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "➕ Add to Your Group",
+            url=f"https://t.me/{bot.get_me().username}?startgroup=true"
+        )
+    )
+
+    return kb
+
 
 def owner_menu():
     kb = types.InlineKeyboardMarkup(row_width=2)
@@ -208,6 +210,13 @@ def owner_menu():
         types.InlineKeyboardButton("📢 Broadcast", callback_data="own:broadcast"),
         types.InlineKeyboardButton("🎬 Welcome Settings", callback_data="own:welcome"),
         types.InlineKeyboardButton("🧾 Pending Proofs", callback_data="own:pending"),
+        types.InlineKeyboardButton("📊 Statistics", callback_data="own:stats"),
+    ]
+
+    for b in buttons:
+        kb.add(b)
+
+    return kb
         types.InlineKeyboardButton("📊 Statistics", callback_data="own:stats"),
     ]
     for b in buttons:
